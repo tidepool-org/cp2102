@@ -7,43 +7,46 @@ class cp2102 extends EventEmitter {
     this.device = usb.findByIds(vendorId, productId);
     this.opts = opts;
     this.device.open(false); // don't auto-configure
+    const self = this;
 
-    this.device.setConfiguration(1, async (err) => {
-      if (err) {
-        return err;
-      }
-      [this.iface] = this.device.interfaces;
-      this.iface.claim();
+    this.device.setConfiguration(1, () => {
+      [self.iface] = this.device.interfaces;
+      self.iface.claim();
 
-      await this.controlTransferOut({
-        requestType: 'vendor',
-        recipient: 'device',
-        request: 0x00,
-        index: 0x00,
-        value: 0x01,
+      const inEndpoint = self.iface.endpoint(0x81);
+      inEndpoint.startPoll();
+      inEndpoint.on('data', (data) => {
+        console.log('Data:', data);
+        self.emit('data', new Uint8Array(data));
       });
 
-      await this.controlTransferOut({
-        requestType: 'vendor',
-        recipient: 'device',
-        request: 0x07,
-        index: 0x00,
-        value: 0x03 | 0x0100 | 0x0200,
-      });
+      (async () => {
+        await this.controlTransferOut({
+          requestType: 'vendor',
+          recipient: 'device',
+          request: 0x00,
+          index: 0x00,
+          value: 0x01,
+        });
 
-      await this.controlTransferOut({
-        requestType: 'vendor',
-        recipient: 'device',
-        request: 0x01,
-        index: 0x00,
-        value: 0x384000 / 38400, // TODO: change baud rate here
-      });
+        await this.controlTransferOut({
+          requestType: 'vendor',
+          recipient: 'device',
+          request: 0x07,
+          index: 0x00,
+          value: 0x03 | 0x0100 | 0x0200,
+        });
 
-      this.iface.endpoint(1).on('data', (data) => {
-        this.emit('data', data);
-      });
+        await this.controlTransferOut({
+          requestType: 'vendor',
+          recipient: 'device',
+          request: 0x01,
+          index: 0x00,
+          value: 0x384000 / 38400, // TODO: change baud rate here
+        });
 
-      return true;
+        self.emit('ready');
+      })();
     });
   }
 
@@ -91,19 +94,32 @@ class cp2102 extends EventEmitter {
     this.controlTansfer('device-to-host', transfer, length);
   }
 
-  async read() {
-    const r = await this.transferIn(1, 64);
-    return new Uint8Array(r.data.buffer);
-  }
-
   write(data, cb) {
-    this.transferIn(1, data).then(result => cb(null, result), err => cb(err, null));
+    console.log('Writing', data.toString('hex'));
+    this.transferOut(1, data).then(() => {
+      cb();
+    }, err => cb(err, null));
   }
 
-  transferIn(endpoint, data) {
+  transferIn(endpoint, length) {
+    return new Promise((resolve, reject) => {
+      this.iface.endpoint(endpoint | 0x80).transfer(length, (err, result) => {
+        if (err) {
+          console.log('transferIn Error:', err);
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  transferOut(endpoint, data) {
+    console.log('Interface:', this.iface);
     return new Promise((resolve, reject) => {
       this.iface.endpoint(endpoint).transfer(data, (err, result) => {
         if (err) {
+          console.log('transferOut Error:', err);
           reject(err);
         } else {
           resolve(result);
