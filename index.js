@@ -16,7 +16,6 @@ class cp2102 extends EventEmitter {
       self.inEndpoint = self.iface.endpoint(0x81);
       self.inEndpoint.startPoll();
       self.inEndpoint.on('data', (data) => {
-        console.log('Data:', data);
         self.emit('data', data);
       });
 
@@ -99,7 +98,6 @@ class cp2102 extends EventEmitter {
   }
 
   write(data, cb) {
-    console.log('Writing', data.toString('hex'));
     this.transferOut(1, data).then(() => {
       cb();
     }, err => cb(err, null));
@@ -119,7 +117,6 @@ class cp2102 extends EventEmitter {
   }
 
   transferOut(endpoint, data) {
-    console.log('Interface:', this.iface);
     return new Promise((resolve, reject) => {
       this.iface.endpoint(endpoint).transfer(data, (err, result) => {
         if (err) {
