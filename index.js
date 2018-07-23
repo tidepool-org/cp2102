@@ -13,37 +13,41 @@ class cp2102 extends EventEmitter {
       [self.iface] = this.device.interfaces;
       self.iface.claim();
 
-      const inEndpoint = self.iface.endpoint(0x81);
-      inEndpoint.startPoll();
-      inEndpoint.on('data', (data) => {
+      self.inEndpoint = self.iface.endpoint(0x81);
+      self.inEndpoint.startPoll();
+      self.inEndpoint.on('data', (data) => {
         console.log('Data:', data);
-        self.emit('data', new Uint8Array(data));
+        self.emit('data', data);
       });
 
       (async () => {
-        await this.controlTransferOut({
-          requestType: 'vendor',
-          recipient: 'device',
-          request: 0x00,
-          index: 0x00,
-          value: 0x01,
-        });
+        try {
+          await this.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x00,
+            index: 0x00,
+            value: 0x01,
+          });
 
-        await this.controlTransferOut({
-          requestType: 'vendor',
-          recipient: 'device',
-          request: 0x07,
-          index: 0x00,
-          value: 0x03 | 0x0100 | 0x0200,
-        });
+          await this.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x07,
+            index: 0x00,
+            value: 0x03 | 0x0100 | 0x0200,
+          });
 
-        await this.controlTransferOut({
-          requestType: 'vendor',
-          recipient: 'device',
-          request: 0x01,
-          index: 0x00,
-          value: 0x384000 / 38400, // TODO: change baud rate here
-        });
+          await this.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x01,
+            index: 0x00,
+            value: 0x384000 / 38400, // TODO: change baud rate here
+          });
+        } catch (err) {
+          console.log('Error during CP2102 setup:', err);
+        }
 
         self.emit('ready');
       })();
@@ -128,8 +132,12 @@ class cp2102 extends EventEmitter {
     });
   }
 
-  close() {
-    this.device.close();
+  close(cb) {
+    this.removeAllListeners();
+    this.iface.release(true, () => {
+      this.device.close();
+      return cb();
+    });
   }
 }
 
