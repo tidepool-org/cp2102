@@ -42,7 +42,7 @@ class cp2102 extends EventEmitter {
             recipient: 'device',
             request: 0x01,
             index: 0x00,
-            value: 0x384000 / 38400, // TODO: change baud rate here
+            value: 0x384000 / this.opts.baudRate,
           });
         } catch (err) {
           console.log('Error during CP2102 setup:', err);
