@@ -1,6 +1,6 @@
 {
   "name": "cp2102",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Silicon Labs CP2102 user-space USB to serial driver",
   "main": "index.js",
   "scripts": {
