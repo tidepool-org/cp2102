@@ -11,7 +11,7 @@ const opts = {
     baudRate : 115200
 };
 
-const connection = new CP2102(productId, vendorId, opts);
+const connection = new CP2102(vendorId, productId, opts);
 
 connection.on('data', (res) => {
   console.log('Data:', res);
