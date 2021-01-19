@@ -19,63 +19,54 @@ const usb = require('usb');
 const EventEmitter = require('events');
 
 class cp2102 extends EventEmitter {
-  constructor(vendorId, productId, opts, setup) {
+  constructor(vendorId, productId, opts) {
     super();
     this.device = usb.findByIds(vendorId, productId);
     this.opts = opts;
-    this.setup = setup || [{
-        transfer: {
-          requestType: 'vendor',
-          recipient: 'device',
-          request: 0x00,
-          index: 0x00,
-          value: 0x01,
-        },
-        data: undefined
-      },
-      {
-        transfer: {
-          requestType: 'vendor',
-          recipient: 'device',
-          request: 0x00,
-          index: 0x00,
-          value: 0x01,
-        },
-        data: undefined
-      },
-      {
-        transfer: {
-          requestType: 'vendor',
-          recipient: 'device',
-          request: 0x00,
-          index: 0x00,
-          value: 0x01,
-        },
-        data: undefined
-      }]
     this.device.open(false); // don't auto-configure
     const self = this;
 
     this.device.setConfiguration(1, () => {
       [self.iface] = this.device.interfaces;
       self.iface.claim();
-      self.inEndpoint = self.iface.endpoint(opts.inEndpointAddress || 0x81);
-      if(opts.transfers != null && opts.wordLength != null)
-        self.inEndpoint.startPoll(opts.transfers, opts.wordLength);
-      else 
-        self.inEndpoint.startPoll();
+
+      self.inEndpoint = self.iface.endpoint(0x81);
+      self.inEndpoint.startPoll();
       self.inEndpoint.on('data', (data) => {
         self.emit('data', data);
       });
 
-      try {
-        setup.forEach(async (parameter) => {
-          await this.controlTransferOut(parameter.transfer, parameter.data)
-        })
-      } catch (err) {
-        console.log('Error during CP2102 setup:', err);
-      }
-      self.emit('ready');
+      (async () => {
+        try {
+          await this.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x00,
+            index: 0x00,
+            value: 0x01,
+          });
+
+          await this.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x07,
+            index: 0x00,
+            value: 0x03 | 0x0100 | 0x0200,
+          });
+
+          await this.controlTransferOut({
+            requestType: 'vendor',
+            recipient: 'device',
+            request: 0x01,
+            index: 0x00,
+            value: 0x384000 / this.opts.baudRate,
+          });
+        } catch (err) {
+          console.log('Error during CP2102 setup:', err);
+        }
+
+        self.emit('ready');
+      })();
     });
   }
 
