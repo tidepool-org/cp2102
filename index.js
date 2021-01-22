@@ -23,7 +23,7 @@ class cp2102 extends EventEmitter {
     super();
     this.device = usb.findByIds(vendorId, productId);
     this.opts = opts;
-    this.device.open(false); // don't auto-configure
+    this.device.open();
     const self = this;
 
     this.device.setConfiguration(1, () => {
