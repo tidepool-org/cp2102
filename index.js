@@ -28,6 +28,9 @@ class cp2102 extends EventEmitter {
 
     this.device.setConfiguration(1, () => {
       [self.iface] = this.device.interfaces;
+      if (self.iface.isKernelDriverActive()) {
+        self.iface.detachKernelDriver();
+      }
       self.iface.claim();
 
       self.inEndpoint = self.iface.endpoint(0x81);
