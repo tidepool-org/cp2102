@@ -23,11 +23,14 @@ class cp2102 extends EventEmitter {
     super();
     this.device = usb.findByIds(vendorId, productId);
     this.opts = opts;
-    this.device.open(false); // don't auto-configure
+    this.device.open();
     const self = this;
 
     this.device.setConfiguration(1, () => {
       [self.iface] = this.device.interfaces;
+      if (self.iface.isKernelDriverActive()) {
+        self.iface.detachKernelDriver();
+      }
       self.iface.claim();
 
       self.inEndpoint = self.iface.endpoint(0x81);
