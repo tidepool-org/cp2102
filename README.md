@@ -29,4 +29,4 @@ connection.on('ready', () => {
 
 ## Thanks
 
-Thanks to [Seiya Nuta](https://github.com/seiyanuta) who posted a WebUSB version as a [GitHub gist](https://gist.github.com/seiyanuta/2c70ba8855f50c536a51f0c5993c1e4c).
+Thanks to [Seiya Nuta](https://github.com/nuta) who posted a WebUSB version as a [GitHub gist](https://gist.github.com/nuta/2c70ba8855f50c536a51f0c5993c1e4c).

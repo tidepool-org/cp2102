@@ -23,6 +23,29 @@ class cp2102 extends EventEmitter {
     super();
     this.device = usb.findByIds(vendorId, productId);
     this.opts = opts;
+
+    const dataBits = this.opts.dataBits || 8;
+
+    let stopBits;
+    if (this.opts.stopBits === 1 || this.opts.stopBits == null) {
+      stopBits = 0x0000;
+    } else {
+      stopBits = 0x0002;
+    }
+
+    let parity;
+    switch (this.opts.parity) {
+      case 'even':
+        parity = 0x0020;
+        break;
+      case 'odd':
+        parity = 0x0010;
+        break;
+      case 'none':
+      default:
+        parity = 0x0000;
+    }
+
     this.setup = setup || [{
       transfer: {
         requestType: 'vendor',
@@ -52,6 +75,16 @@ class cp2102 extends EventEmitter {
         value: 0x384000 / this.opts.baudRate,
       },
       data: undefined,
+    },
+    {
+      transfer: {
+        requestType: 'vendor',
+        recipient: 'device',
+        request: 0x03,
+        index: 0x00,
+        value: (dataBits << 8) | parity | stopBits,
+      },
+      data: undefined,
     }];
     this.device.open(false); // don't auto-configure
     const self = this;
@@ -62,19 +95,23 @@ class cp2102 extends EventEmitter {
       self.inEndpoint = self.iface.endpoint(opts.inEndpointAddress || 0x81);
       if (opts.transfers != null && opts.wordLength != null) {
         self.inEndpoint.startPoll(opts.transfers, opts.wordLength);
-      } else self.inEndpoint.startPoll();
+      } else {
+        self.inEndpoint.startPoll();
+      }
       self.inEndpoint.on('data', (data) => {
         self.emit('data', data);
       });
 
-      try {
-        setup.forEach(async (parameter) => {
-          await this.controlTransferOut(parameter.transfer, parameter.data);
-        });
-      } catch (err) {
-        console.log('Error during CP2102 setup:', err);
-      }
-      self.emit('ready');
+      (async () => {
+        try {
+          for (const parameter of self.setup) {
+            await this.controlTransferOut(parameter.transfer, parameter.data);
+          }
+        } catch (err) {
+          console.log('Error during CP2102 setup:', err);
+        }
+        self.emit('ready');
+      })();
     });
   }
 
