@@ -2,6 +2,8 @@
     "extends": "airbnb-base",
     "rules": {
       "no-bitwise": 0,
-      "max-len": "warn"
+      "max-len": "warn",
+      "no-restricted-syntax": 0,
+      "no-await-in-loop": 0
     }
 }
