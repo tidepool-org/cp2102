@@ -24,12 +24,12 @@ const opts = {
 
   const connection = new CP2102(device, opts);
 
-  connection.on('data', (res) => {
+  connection.addEventListener('data', (res) => {
     console.log('Data:', res);
     connection.close(() => {});
   });
 
-  connection.on('ready', () => {
+  connection.addEventListener('ready', () => {
     connection.write([0x01, 0x02, 0x02], (err) => {
       if (err) {
         console.log('Error sending command:', err);
