@@ -1,6 +1,6 @@
 {
   "name": "cp2102",
-  "version": "0.0.7",
+  "version": "0.1.1",
   "description": "Silicon Labs CP2102 user-space USB to serial driver",
   "main": "index.js",
   "scripts": {
@@ -24,13 +24,13 @@
   },
   "homepage": "https://github.com/tidepool-org/cp2102#readme",
   "dependencies": {
-    "usb": "2.4.3"
+    "core-js": "2.6.12",
+    "usb": "2.11.0"
   },
   "devDependencies": {
-    "core-js": "2.6.10",
-    "eslint": "8.19.0",
+    "eslint": "8.56.0",
     "eslint-config-airbnb": "18.2.1",
-    "eslint-formatter-pretty": "4.1.0",
-    "eslint-plugin-import": "2.26.0"
+    "eslint-formatter-pretty": "5.0.0",
+    "eslint-plugin-import": "2.29.1"
   }
 }
